@@ -28,8 +28,15 @@ export class CompaniesService {
         }
     }
 
-    getAllCompanies(){
-        return this.companyModel.find()
+    async getCompanies(search?: string) {
+        try{
+            const filter = search
+                ? { name: { $regex: search, $options: 'i' } } : {};
+
+            return this.companyModel.find(filter);
+        }catch (err){
+            throw new InternalServerErrorException('Failed to fetch Companies')
+        }
     }
 
     async deleteCompany(id: string) {

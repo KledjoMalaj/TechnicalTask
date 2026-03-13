@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, Param, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Delete, Get, Param, Post, Query, UseGuards} from "@nestjs/common";
 import {CompaniesService} from "./companies.service";
 import {CompanyDto} from "./Dto/company.dto";
 import {AuthGuard} from "@nestjs/passport";
@@ -15,8 +15,8 @@ export class CompaniesController {
     }
 
     @Get()
-    getAllCompanies(){
-        return this.companyService.getAllCompanies()
+    getCompanies(@Query('search')search?:string){
+        return this.companyService.getCompanies(search)
     }
 
     @Delete("/:id")
