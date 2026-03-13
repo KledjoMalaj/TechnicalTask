@@ -1,4 +1,4 @@
-import {HttpException, Injectable} from "@nestjs/common";
+import {ConflictException, HttpException, Injectable, InternalServerErrorException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Admin} from "../schemas/Admin.schema";
 import {Model} from "mongoose";
@@ -13,12 +13,22 @@ export class AdminsService{
     ) {}
 
     async createAdmin(crateAdminDto:AdminDto){
-        const hashed = await bcrypt.hash(crateAdminDto.password,10)
-        const newAdmin = new this.adminModel({
-            ...crateAdminDto,
-            password:hashed
-        })
-        return newAdmin.save()
+        try{
+            const existingAdmin = await this.adminModel.findOne({email: crateAdminDto.email})
+            if (existingAdmin) throw new ConflictException('Admin already exists')
+
+            const hashed = await bcrypt.hash(crateAdminDto.password,10)
+            const newAdmin = new this.adminModel({
+                ...crateAdminDto,
+                password:hashed
+            })
+
+            return await newAdmin.save()
+
+        }catch (err){
+            if (err instanceof HttpException) throw err
+            throw new InternalServerErrorException(`Failed to register ${err.message}`)
+        }
     }
 
     async validateAdmin(email: string, password: string) {
@@ -32,12 +42,18 @@ export class AdminsService{
     }
 
     async login(adminDto: AdminDto) {
-        const admin = await this.adminModel.findOne({email:adminDto.email})
-        if (!admin) throw new HttpException('Admin does not exist',400)
-        const payload = {
-            id: admin._id,
-            email: admin.email
+        try {
+            const admin = await this.validateAdmin(adminDto.email, adminDto.password)
+
+            const payload = {
+                id: admin._id,
+                email: admin.email
+            }
+            return this.jwtService.sign(payload)
+
+        }catch (err) {
+            if(err instanceof HttpException) throw err
+            throw new InternalServerErrorException(`Failed to login ${err.message}`)
         }
-        return this.jwtService.sign(payload)
     }
 }

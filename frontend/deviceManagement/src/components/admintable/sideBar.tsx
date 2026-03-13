@@ -3,8 +3,9 @@ import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useState} from "react";
 import AddCompany from "@/components/admintable/addCompany.tsx";
 
-async function fetchCompanies(){
+async function fetchCompanies(search?: string){
     const res = await axios.get('http://localhost:3000/companies',{
+        params:{search},
         headers:{
             Authorization:`Bearer ${localStorage.getItem('jwt')}`
         }
@@ -19,8 +20,8 @@ function SideBar({onSelect}:any){
     const [searchQuery, setSearchQuery] = useState('');
 
     const {data} = useQuery({
-        queryKey:['companies'],
-        queryFn:fetchCompanies
+        queryKey:['companies', searchQuery],
+        queryFn: () => fetchCompanies(searchQuery)
     })
 
     const deleteCompany = useMutation({
@@ -61,8 +62,8 @@ function SideBar({onSelect}:any){
                     <div className='text-center bg-gray-800 m-1 p-1 rounded border border-gray-900 cursor-pointer hover:bg-gray-900 transition-all'
                          onClick={()=>{onSelect({type:"home"})}}
                     >Home</div>
-                    {data?.filter((company:any) => company.name.toLowerCase().includes(searchQuery.toLowerCase()))?.map((company:any) => (
-                        <div key={company.id}>
+                    {data?.map((company:any) => (
+                        <div key={company._id}>
 
                             <div
                                 className='text-center bg-gray-700 m-1 p-1 rounded border border-gray-900 cursor-pointer hover:bg-gray-900 transition-all'
